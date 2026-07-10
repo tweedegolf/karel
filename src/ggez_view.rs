@@ -3,51 +3,35 @@ use ggez::{
     conf::WindowMode,
     event::{self, EventHandler},
     graphics::{self, Color, DrawMode, DrawParam, Mesh, Rect},
+    input::keyboard::KeyCode,
     mint::Point2,
 };
 
 use crate::{Direction, Robot, World, interface};
 use std::{
     f32::consts::PI,
-    sync::mpsc::{Receiver, Sender, channel},
-    time::Duration,
+    sync::mpsc::{Receiver, SyncSender, TryRecvError, sync_channel},
+    time::{Duration, Instant},
 };
 
-const PAUSE: Duration = Duration::from_millis(100);
 const SCALE: f32 = 20.0;
 
 pub struct GgezView {
-    sender: Option<Sender<(World, Vec<Robot>)>>,
+    sender: SyncSender<(World, Vec<Robot>)>,
 }
 
 impl GgezView {
     pub fn spawn() -> (Self, Receiver<(World, Vec<Robot>)>) {
-        let (sender, receiver) = channel();
+        let (sender, receiver) = sync_channel(0);
 
-        (
-            Self {
-                sender: Some(sender),
-            },
-            receiver,
-        )
+        (Self { sender }, receiver)
     }
 }
 
 impl interface::Display for GgezView {
     fn draw(&self, w: &World, bots: &mut dyn Iterator<Item = &Robot>) {
-        self.sender
-            .as_ref()
-            .expect("view is only gone in drop")
-            .send((w.clone(), bots.cloned().collect()))
-            .expect("ggez view is always around");
-
-        std::thread::sleep(PAUSE);
-    }
-}
-
-impl Drop for GgezView {
-    fn drop(&mut self) {
-        drop(self.sender.take());
+        // If the window is gone there is nothing we can do
+        let _ = self.sender.send((w.clone(), bots.cloned().collect()));
     }
 }
 
@@ -59,6 +43,8 @@ pub struct Karel {
     robo_mesh: Mesh,
     crab_mesh: Mesh,
     wall_mesh: Mesh,
+    wait_time: Duration,
+    last_update: Instant,
 }
 
 impl Karel {
@@ -132,6 +118,8 @@ impl Karel {
             robo_mesh,
             crab_mesh,
             wall_mesh,
+            wait_time: Duration::from_millis(100),
+            last_update: Instant::now(),
         };
 
         // Run!
@@ -141,12 +129,18 @@ impl Karel {
 
 impl EventHandler for Karel {
     fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
-        match self.receiver.recv() {
+        if self.last_update.elapsed() < self.wait_time {
+            return Ok(());
+        }
+
+        match self.receiver.try_recv() {
             Ok((world, robots)) => {
                 self.world = world;
                 self.robots = robots;
+                self.last_update = Instant::now();
             }
-            Err(_) => {
+            Err(TryRecvError::Empty) => {}
+            Err(TryRecvError::Disconnected) => {
                 ctx.request_quit();
             }
         }
@@ -256,6 +250,30 @@ impl EventHandler for Karel {
 
         // Draw code here...
         canvas.finish(ctx)?;
+
+        Ok(())
+    }
+
+    fn key_down_event(
+        &mut self,
+        ctx: &mut ggez::Context,
+        input: ggez::input::keyboard::KeyInput,
+        _repeated: bool,
+    ) -> Result<(), ggez::GameError> {
+        let Some(keycode) = input.keycode else {
+            return Ok(());
+        };
+
+        match keycode {
+            KeyCode::Escape => ctx.request_quit(),
+            KeyCode::Plus => {
+                self.wait_time = self.wait_time.saturating_sub(Duration::from_millis(100))
+            }
+            KeyCode::Minus => {
+                self.wait_time = self.wait_time.saturating_add(Duration::from_millis(100))
+            }
+            _ => {}
+        };
 
         Ok(())
     }
