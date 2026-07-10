@@ -1,6 +1,6 @@
 use ggez::{
     ContextBuilder,
-    conf::WindowMode,
+    conf::{WindowMode, WindowSetup},
     event::{self, EventHandler},
     graphics::{self, Color, DrawMode, DrawParam, Mesh, Rect},
     input::keyboard::KeyCode,
@@ -14,7 +14,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-const SCALE: f32 = 20.0;
+const MARGIN: f32 = 0.1;
 
 pub struct GgezView {
     sender: SyncSender<(World, Vec<Robot>)>,
@@ -39,12 +39,11 @@ pub struct Karel {
     receiver: Receiver<(World, Vec<Robot>)>,
     world: World,
     robots: Vec<Robot>,
-
-    robo_mesh: Mesh,
-    crab_mesh: Mesh,
-    wall_mesh: Mesh,
+    scale: f32,
     wait_time: Duration,
     last_update: Instant,
+
+    meshes: Meshes,
 }
 
 impl Karel {
@@ -55,58 +54,28 @@ impl Karel {
             return;
         };
 
-        let window = WindowMode {
-            width: world.width() as f32 * SCALE,
-            height: world.height() as f32 * SCALE,
+        let scale = 20.0;
+        let window_mode = WindowMode {
+            width: (world.width() as f32 + 2.0 * MARGIN) * scale,
+            height: (world.height() as f32 + 2.0 * MARGIN) * scale,
+            resizable: true,
+            ..Default::default()
+        };
+
+        let setup = WindowSetup {
+            title: "Karel".into(),
+            vsync: true, // Turn to false to increase speed
             ..Default::default()
         };
 
         // Make a Context.
         let (ctx, event_loop) = ContextBuilder::new("Karel", "Trifecta Tech Foundation")
-            .window_mode(window)
+            .window_setup(setup)
+            .window_mode(window_mode)
             .build()
             .expect("aieee, could not create ggez context!");
 
-        const ROBO_SCALE: f32 = SCALE * 0.9;
-        let robo_mesh = graphics::Mesh::new_polygon(
-            &ctx,
-            DrawMode::fill(),
-            &[
-                Point2 {
-                    x: 0.0 * ROBO_SCALE,
-                    y: 0.5 * ROBO_SCALE,
-                },
-                Point2 {
-                    x: 0.5 * ROBO_SCALE,
-                    y: -0.5 * ROBO_SCALE,
-                },
-                Point2 {
-                    x: -0.5 * ROBO_SCALE,
-                    y: -0.5 * ROBO_SCALE,
-                },
-            ],
-            Color::GREEN,
-        )
-        .unwrap();
-
-        let crab_bb = Rect::new(0.1 * SCALE, 0.1 * SCALE, 0.8 * SCALE, 0.8 * SCALE);
-        let crab_mesh = graphics::Mesh::new_rounded_rectangle(
-            &ctx,
-            DrawMode::fill(),
-            crab_bb,
-            0.25 * SCALE,
-            Color::RED,
-        )
-        .unwrap();
-
-        let wall_mesh = graphics::Mesh::new_rounded_rectangle(
-            &ctx,
-            DrawMode::fill(),
-            Rect::new(0.0, 0.05 * SCALE, 0.1 * SCALE, 0.9 * SCALE),
-            0.1 * SCALE,
-            Color::BLACK,
-        )
-        .unwrap();
+        let meshes = Meshes::new(scale, &world, &ctx);
 
         // Create an instance of your event handler.
         // Usually, you should provide it with the Context object to
@@ -115,11 +84,10 @@ impl Karel {
             receiver,
             world,
             robots,
-            robo_mesh,
-            crab_mesh,
-            wall_mesh,
+            scale,
             wait_time: Duration::from_millis(100),
             last_update: Instant::now(),
+            meshes,
         };
 
         // Run!
@@ -149,83 +117,81 @@ impl EventHandler for Karel {
     }
 
     fn draw(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
+        let scale = self.scale;
+        let scaled = |x: usize| x as f32 * scale;
+
         let mut canvas = graphics::Canvas::from_frame(ctx, Color::WHITE);
-        let gray = Color::from_rgb(0xD0, 0xD0, 0xD0);
 
+        // Offset the screen to create a margin
+        if let Some(screen) = canvas.screen_coordinates() {
+            canvas.set_screen_coordinates(Rect {
+                x: -scale * MARGIN,
+                y: -scale * MARGIN,
+                ..screen
+            });
+        }
+
+        // Draw vertical grid lines
         for x in 1..self.world.width() {
-            let line = graphics::Mesh::new_line(
-                ctx,
-                &[
-                    [0.0, 1.0],
-                    [0.0, self.world.height() as f32 * SCALE + SCALE],
-                ],
-                1.0,
-                gray,
-            )
-            .unwrap();
-
-            canvas.draw(&line, DrawParam::new().dest([x as f32 * SCALE, 0.0]));
+            canvas.draw(&self.meshes.v_grid, DrawParam::new().dest([scaled(x), 0.0]));
         }
 
+        // Draw horizontal grid lines
         for y in 1..self.world.height() {
-            let line = graphics::Mesh::new_line(
-                ctx,
-                &[[1.0, 0.0], [self.world.width() as f32 * SCALE + SCALE, 0.0]],
-                1.0,
-                gray,
-            )
-            .unwrap();
-
-            canvas.draw(&line, DrawParam::new().dest([0.0, y as f32 * SCALE]));
+            canvas.draw(&self.meshes.h_grid, DrawParam::new().dest([0.0, scaled(y)]));
         }
 
+        // Draw walls at the top of the world
         for x in 0..self.world.width() {
             if self.world.walls(0, x).has(Direction::North) {
                 canvas.draw(
-                    &self.wall_mesh,
+                    &self.meshes.wall,
                     DrawParam::new()
-                        .dest([x as f32 * SCALE + SCALE, -0.05 * SCALE])
+                        .dest([scaled(x) + scale, -0.05 * scale])
                         .rotation(PI / 2.0),
                 );
             }
         }
 
+        // Draw walls at the left side of the world
         for y in 0..self.world.height() {
             if self.world.walls(y, 0).has(Direction::West) {
                 canvas.draw(
-                    &self.wall_mesh,
-                    DrawParam::new().dest([-0.05 * SCALE, y as f32 * SCALE]),
+                    &self.meshes.wall,
+                    DrawParam::new().dest([-0.05 * scale, scaled(y)]),
                 );
             }
         }
 
+        // Draw all east and south walls
         for x in 0..self.world.width() {
             for y in 0..self.world.height() {
                 let walls = self.world.walls(y, x);
                 if walls.has(Direction::East) {
                     canvas.draw(
-                        &self.wall_mesh,
-                        DrawParam::new().dest([x as f32 * SCALE + 0.95 * SCALE, y as f32 * SCALE]),
+                        &self.meshes.wall,
+                        DrawParam::new().dest([scaled(x) + 0.95 * scale, scaled(y)]),
                     );
                 }
 
                 if walls.has(Direction::South) {
                     canvas.draw(
-                        &self.wall_mesh,
+                        &self.meshes.wall,
                         DrawParam::new()
-                            .dest([x as f32 * SCALE + SCALE, y as f32 * SCALE + 0.95 * SCALE])
+                            .dest([scaled(x) + scale, scaled(y) + 0.95 * scale])
                             .rotation(PI / 2.0),
                     );
                 }
             }
         }
 
+        // Draw crabs
         for x in 0..self.world.width() {
             for y in 0..self.world.height() {
                 if self.world.has_shell(y, x) {
                     canvas.draw(
-                        &self.crab_mesh,
-                        DrawParam::new().dest([x as f32 * SCALE, y as f32 * SCALE]), // .scale([SCALE * 0.9, SCALE * 0.9]),
+                        &self.meshes.crab,
+                        DrawParam::new().dest([scaled(x), scaled(y)]),
                     );
                 }
             }
@@ -233,11 +199,11 @@ impl EventHandler for Karel {
 
         for robo in &self.robots {
             canvas.draw(
-                &self.robo_mesh,
+                &self.meshes.robo,
                 DrawParam::new()
                     .dest([
-                        robo.pos.1 as f32 * SCALE + SCALE * 0.5,
-                        robo.pos.0 as f32 * SCALE + SCALE * 0.5,
+                        scaled(robo.pos.1) + scale * 0.5,
+                        scaled(robo.pos.0) + scale * 0.5,
                     ])
                     .rotation(match robo.dir {
                         Direction::North => PI,
@@ -276,5 +242,105 @@ impl EventHandler for Karel {
         };
 
         Ok(())
+    }
+
+    fn resize_event(
+        &mut self,
+        ctx: &mut ggez::Context,
+        width: f32,
+        height: f32,
+    ) -> Result<(), ggez::GameError> {
+        let width_scale = width / (self.world.width() as f32 + 2.0 * MARGIN);
+        let height_scale = height / (self.world.height() as f32 + 2.0 * MARGIN);
+
+        self.scale = width_scale.min(height_scale);
+        self.meshes = Meshes::new(self.scale, &self.world, ctx);
+
+        Ok(())
+    }
+}
+
+struct Meshes {
+    robo: Mesh,
+    wall: Mesh,
+    crab: Mesh,
+    v_grid: Mesh,
+    h_grid: Mesh,
+}
+
+impl Meshes {
+    pub fn new(scale: f32, world: &World, ctx: &ggez::Context) -> Self {
+        Self {
+            robo: Self::robo_mesh(scale, ctx),
+            wall: Self::wall_mesh(scale, ctx),
+            crab: Self::crab_mesh(scale, ctx),
+            v_grid: Self::v_grid(scale, world, ctx),
+            h_grid: Self::h_grid(scale, world, ctx),
+        }
+    }
+
+    fn robo_mesh(scale: f32, ctx: &ggez::Context) -> Mesh {
+        let robo_scale = scale * 0.9;
+        Mesh::new_polygon(
+            ctx,
+            DrawMode::fill(),
+            &[
+                Point2 {
+                    x: 0.0 * robo_scale,
+                    y: 0.5 * robo_scale,
+                },
+                Point2 {
+                    x: 0.5 * robo_scale,
+                    y: -0.5 * robo_scale,
+                },
+                Point2 {
+                    x: -0.5 * robo_scale,
+                    y: -0.5 * robo_scale,
+                },
+            ],
+            Color::GREEN,
+        )
+        .unwrap()
+    }
+
+    fn crab_mesh(scale: f32, ctx: &ggez::Context) -> Mesh {
+        let crab_bb = Rect::new(0.1 * scale, 0.1 * scale, 0.8 * scale, 0.8 * scale);
+        Mesh::new_rounded_rectangle(ctx, DrawMode::fill(), crab_bb, 0.25 * scale, Color::RED)
+            .unwrap()
+    }
+
+    fn wall_mesh(scale: f32, ctx: &ggez::Context) -> Mesh {
+        Mesh::new_rounded_rectangle(
+            ctx,
+            DrawMode::fill(),
+            Rect::new(0.0, 0.05 * scale, 0.1 * scale, 0.9 * scale),
+            0.1 * scale,
+            Color::BLACK,
+        )
+        .unwrap()
+    }
+
+    fn gray() -> Color {
+        Color::from_rgb(0xD0, 0xD0, 0xD0)
+    }
+
+    fn v_grid(scale: f32, world: &World, ctx: &ggez::Context) -> Mesh {
+        Mesh::new_line(
+            ctx,
+            &[[0.0, 1.0], [0.0, world.height() as f32 * scale]],
+            1.0,
+            Self::gray(),
+        )
+        .unwrap()
+    }
+
+    fn h_grid(scale: f32, world: &World, ctx: &ggez::Context) -> Mesh {
+        Mesh::new_line(
+            ctx,
+            &[[1.0, 0.0], [world.width() as f32 * scale, 0.0]],
+            1.0,
+            Self::gray(),
+        )
+        .unwrap()
     }
 }
