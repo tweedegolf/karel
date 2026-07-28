@@ -82,7 +82,7 @@ impl SimpleRobot for MonoRobotWorld {
 }
 
 impl MonoRobotWorld {
-    fn update(&self) {
+    pub(crate) fn update(&self) {
         self.output
             .draw(&self.world, &mut [&self.robot].into_iter());
     }
