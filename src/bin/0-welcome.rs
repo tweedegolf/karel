@@ -21,7 +21,7 @@ fn ahead_four_steps() {
     todo!();
 }
 
-fn make_line_of_our_crabs() {
+fn make_line_of_four_crabs() {
     todo!();
 }
 

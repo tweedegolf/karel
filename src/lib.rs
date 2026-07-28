@@ -43,6 +43,8 @@ pub fn demo() {
     karel::run(world, robot, robot_program);
 }
 
+const PAUSE: std::time::Duration = std::time::Duration::from_millis(250);
+
 pub mod helpers;
 
 #[cfg(feature = "ggez")]

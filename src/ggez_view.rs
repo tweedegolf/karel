@@ -86,7 +86,7 @@ impl Karel {
             world,
             robots,
             scale,
-            wait_time: Duration::from_millis(100),
+            wait_time: crate::PAUSE,
             last_update: Instant::now(),
             meshes,
             is_done: false,
