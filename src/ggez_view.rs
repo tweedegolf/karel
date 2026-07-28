@@ -2,7 +2,7 @@ use ggez::{
     ContextBuilder,
     conf::{WindowMode, WindowSetup},
     event::{self, EventHandler},
-    graphics::{self, Color, DrawMode, DrawParam, Mesh, Rect},
+    graphics::{self, Color, DrawMode, DrawParam, Mesh, Rect, Text},
     input::keyboard::KeyCode,
     mint::Point2,
 };
@@ -42,6 +42,7 @@ pub struct Karel {
     scale: f32,
     wait_time: Duration,
     last_update: Instant,
+    is_done: bool,
 
     meshes: Meshes,
 }
@@ -85,9 +86,10 @@ impl Karel {
             world,
             robots,
             scale,
-            wait_time: Duration::from_millis(100),
+            wait_time: crate::PAUSE,
             last_update: Instant::now(),
             meshes,
+            is_done: false,
         };
 
         // Run!
@@ -96,7 +98,7 @@ impl Karel {
 }
 
 impl EventHandler for Karel {
-    fn update(&mut self, ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
+    fn update(&mut self, _ctx: &mut ggez::Context) -> Result<(), ggez::GameError> {
         if self.last_update.elapsed() < self.wait_time {
             return Ok(());
         }
@@ -109,7 +111,7 @@ impl EventHandler for Karel {
             }
             Err(TryRecvError::Empty) => {}
             Err(TryRecvError::Disconnected) => {
-                ctx.request_quit();
+                self.is_done = true;
             }
         }
 
@@ -211,6 +213,21 @@ impl EventHandler for Karel {
                         Direction::West => PI / 2.0,
                         Direction::East => 3.0 * PI / 2.0,
                     }),
+            );
+        }
+
+        if self.is_done {
+            let mut text = Text::new("Simulation finished\nPress Esc to close");
+            text.set_scale(scale * 3.0)
+                .set_layout(graphics::TextLayout {
+                    h_align: graphics::TextAlign::Middle,
+                    v_align: graphics::TextAlign::Middle,
+                });
+            canvas.draw(
+                &text,
+                DrawParam::new()
+                    .color(Color::CYAN)
+                    .dest(canvas.screen_coordinates().unwrap().center()),
             );
         }
 

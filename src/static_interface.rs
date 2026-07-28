@@ -32,12 +32,14 @@ pub fn run(
 
     let handle = std::thread::spawn(move || {
         let _restore = ClearMutex;
-        *KAREL.lock().unwrap() = Some(MonoRobotWorld {
+        let world = MonoRobotWorld {
             world,
             robot,
             output: Box::new(output),
-        });
+        };
+        world.update();
 
+        *KAREL.lock().unwrap() = Some(world);
         user_program()
     });
 
