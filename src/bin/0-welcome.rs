@@ -1,3 +1,10 @@
+// Welcome! Meet Karel, a robot that likes to explore the world. 
+// It's world exists of [TODO: beschrijving van Karel's wereld: 2d, vierkant, muren, ...]
+//
+// Karel has only 7 possible actions to take, as mentioned in the "use karel ::{...}" section.
+// Help Karel explore by making functions as described below at the "todo!();" places.
+// 
+
 #![allow(unused)]
 
 use karel::{facing_north, on_crab, pick_crab_up, put_crab_down, step, turn_clockwise, wall_ahead};
