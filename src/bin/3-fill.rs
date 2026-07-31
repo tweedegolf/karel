@@ -1,9 +1,9 @@
 #![allow(unused_imports)]
 #![allow(unused)]
 
-use karel::{
-    facing_north, helpers, on_crab, pick_crab_up, put_crab_down, step, turn_clockwise, wall_ahead,
-};
+use karel::{facing_north, on_crab, pick_crab_up, put_crab_down, step, turn_clockwise, wall_ahead};
+
+use karel::helpers;
 
 fn robot_program() {
     todo!();

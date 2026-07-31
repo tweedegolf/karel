@@ -1,6 +1,13 @@
 #![allow(unused)]
 
-use karel::{facing_north, on_crab, pick_crab_up, put_crab_down, step, turn_clockwise, wall_ahead};
+// These are the senses of Karel, i.e. they are either true or false.
+use karel::{facing_north, on_crab, wall_ahead};
+
+// These are the actions that Karel can do.
+use karel::{pick_crab_up, put_crab_down, step, turn_clockwise};
+
+// Helper functions you defined yourself.
+use karel::helpers;
 
 fn first_steps() {
     step();
