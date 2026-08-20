@@ -1,3 +1,7 @@
+// Help Karel build a square out of crabs!
+// You can optionally experiment with the size and location of the square. 
+// How many squares can you build?
+//
 #![allow(unused_imports)]
 
 use karel::{facing_north, on_crab, pick_crab_up, put_crab_down, step, turn_clockwise, wall_ahead};
