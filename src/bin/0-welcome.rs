@@ -1,3 +1,15 @@
+// Welcome! Meet Karel, a robot that likes to explore the world. 
+// It's world exists of [TODO: beschrijving van Karel's wereld: 2d, vierkant, muren, ...]
+//
+// Help Karel explore by making functions as described below at the "todo!();" places.
+// A first function has been created as example under "first_steps".
+//
+// Please note:
+// - Karel has only 7 possible actions that can be used in a function, as 
+// mentioned in the "use karel ::{...}" section.
+// - Per run, Karel can only execute one function. Find the place where this is
+// set and change it to the function you want Karel to execute.
+
 #![allow(unused)]
 
 // These are the senses of Karel, i.e. they are either true or false.
