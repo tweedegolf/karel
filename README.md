@@ -6,26 +6,16 @@ Framework for building well-known Karel the Robot exercises, this time in Rust.
 ## What is Karel the Robot
 
 Karel the Robot is series of exercises designed to learn programming basics in a simple 
-environment. Originally designed to learn Python, as can be read in the 
-[original Karel the Robot description][karel-stanford], they are redesigned to teach Rust.   
+environment. It has been used at Stanford University to learn Python, as can be read in the 
+[Stanford Karel the Robot description][karel-stanford]. We have redesigned the exercises to
+teach Rust.
 
 
 ## Goal
 
 These exercises give an introduction to the programming concept of control flow. 
-They can be used for absolute beginners in learning programming concepts with the Rust programming language. 
-
-
-## Copyright & License
-
-Please read the [LICENSE][license] document for details about copyright and license.
-
-
-## Student guide
-
-Karel the Robot will be used as part of a mentoring program to learn Rust, offered by
-Tweede Golf and the Dutch Electoral Council. A student guide to the program is being 
-developed and will be linked here. 
+They can be used for absolute beginners in learning programming concepts with the Rust programming
+language. 
 
 
 ## Getting started
@@ -45,6 +35,18 @@ to execute, e.g. `0-welcome`.
 of the exercises.
 - Per run, Karel can only execute one function. Find the place where this is set in the exercise
  and change it to the function you want Karel to execute.
+
+
+## Student guide
+
+Karel the Robot will be used as part of a mentoring program to learn Rust, offered by
+Tweede Golf and the Dutch Electoral Council. A student guide to the program is being 
+developed and will be linked here. 
+
+
+## Copyright & License
+
+Please read the [LICENSE][license] document for details about copyright and license.
 
 
 [karel-stanford]: https://compedu.stanford.edu/karel-reader/docs/python/en/chapter1.html
