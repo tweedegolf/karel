@@ -7,13 +7,13 @@ Framework for building well-known Karel the Robot exercises, this time in Rust.
 
 Karel the Robot is series of exercises designed to learn programming basics in a simple 
 environment. Originally designed to learn Python, as can be read in the 
-[original Karel the Robot description][karel-stanford], they are redesigned in Rust.   
+[original Karel the Robot description][karel-stanford], they are redesigned to teach Rust.   
 
 
 ## Goal
 
 These exercises give an introduction to the programming concept of control flow. 
-They can be used for absolute beginners in learning programming concepts with language Rust. 
+They can be used for absolute beginners in learning programming concepts with the Rust programming language. 
 
 
 ## Copyright & License
@@ -32,16 +32,16 @@ developed and will be linked here.
 
 - Install Rust as described in the [Install Rust guide][install-rust].
 - Fork this repository.
-- Run an exercise by executing the command "cargo run --bin" followed by the exercise you want
-to execute, e.g. 0-welcome.
-- The exercises can be found in src/bin.
+- Run an exercise by executing the command `cargo run --bin` followed by the exercise you want
+to execute, e.g. `0-welcome`.
+- The exercises can be found in `src/bin`.
 - Change the content of the exercise files to change Karel's behaviour in the graphic environment.
 
 
 ## Rules for running Karel
 
-- Help Karel explore by making functions as described at the "todo!();" places in the exercises.
-- Karel has only 7 possible actions to take, as mentioned in the "use karel ::{...}" section
+- Help Karel explore by making functions as described at the `todo!();` places in the exercises.
+- Karel has only 7 possible actions to take, as mentioned in the `use karel ::{...}` section
 of the exercises.
 - Per run, Karel can only execute one function. Find the place where this is set in the exercise
  and change it to the function you want Karel to execute.
