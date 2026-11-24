@@ -1,5 +1,11 @@
 #![allow(unused)]
 
+// Help Karel explore by making functions as described below at the `todo!();` placeholders.
+// A first function has been created as example under `fn first_steps()`.
+//
+// Per run, Karel can only execute one function. Find the place where this is set in the
+// exercise and change it to the function you want Karel to execute.
+//
 // These are the senses of Karel, i.e. they are either true or false.
 use karel::{facing_north, on_crab, wall_ahead};
 
