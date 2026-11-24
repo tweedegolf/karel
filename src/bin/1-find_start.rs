@@ -1,3 +1,8 @@
+// Help Karel to find the start of the field. Karel is correctly at the start when it is in the
+// upper left corner and facing to the right.
+//
+// Make sure Karel does not crash into the walls!
+
 #![allow(unused_imports)]
 
 use karel::{facing_north, on_crab, pick_crab_up, put_crab_down, step, turn_clockwise, wall_ahead};
